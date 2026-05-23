@@ -11,10 +11,18 @@ const {
 const cron = require('node-cron');
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages
+    ]
 });
 
 let channelId = null;
+let lastAnnonceMessage = null;
+
+const ROLE_NAME = '𝕰𝖑 𝕴𝖒𝖕𝖊𝖗𝖎𝖔';
 
 const commands = [
 
@@ -70,7 +78,7 @@ client.once('ready', () => {
 
     console.log(`${client.user.tag} connecté`);
 
-    // ANNONCE AUTOMATIQUE À 13H
+    // ANNONCE À 13H
     cron.schedule('0 13 * * *', async () => {
 
         if (!channelId) return;
@@ -79,7 +87,7 @@ client.once('ready', () => {
 
         if (!channel) return;
 
-        const message = await channel.send(`
+        lastAnnonceMessage = await channel.send(`
 🚨 **ANNONCE IMPORTANTE - TOUS LA FAMILLE** 🚨
 
 Merci de répondre avec UNE SEULE réaction uniquement :
@@ -93,9 +101,71 @@ Merci de répondre avec UNE SEULE réaction uniquement :
 🔥 ON A BESOIN DE VOUS, LA FAMILLE !
         `);
 
-        await message.react('✅');
-        await message.react('❌');
-        await message.react('⏰');
+        await lastAnnonceMessage.react('✅');
+        await lastAnnonceMessage.react('❌');
+        await lastAnnonceMessage.react('⏰');
+
+    });
+
+    // DM AUTOMATIQUE À 20H
+    cron.schedule('0 20 * * *', async () => {
+
+        if (!lastAnnonceMessage) return;
+
+        const guild = lastAnnonceMessage.guild;
+
+        const role = guild.roles.cache.find(
+            r => r.name === ROLE_NAME
+        );
+
+        if (!role) return;
+
+        const reactedUsers = new Set();
+
+        for (const reaction of lastAnnonceMessage.reactions.cache.values()) {
+
+            const users = await reaction.users.fetch();
+
+            users.forEach(user => {
+
+                if (!user.bot) {
+                    reactedUsers.add(user.id);
+                }
+
+            });
+
+        }
+
+        for (const member of role.members.values()) {
+
+            if (!reactedUsers.has(member.id)) {
+
+                try {
+
+                    await member.send(`
+⚠️ Tu n’as pas répondu à l’annonce du jour.
+
+Merci de voter rapidement :
+✅ Présent
+❌ Pas disponible
+⏰ En retard
+
+— El Imperio
+                    `);
+
+                    console.log(`DM envoyé à ${member.user.tag}`);
+
+                } catch (err) {
+
+                    console.log(
+                        `Impossible d'envoyer un DM à ${member.user.tag}`
+                    );
+
+                }
+
+            }
+
+        }
 
     });
 
@@ -110,7 +180,7 @@ client.on('interactionCreate', async interaction => {
     // TEST ANNONCE
     if (interaction.commandName === 'testannonce') {
 
-        const message = await channel.send(`
+        lastAnnonceMessage = await channel.send(`
 🚨 **ANNONCE IMPORTANTE - TOUS LA FAMILLE** 🚨
 
 Merci de répondre avec UNE SEULE réaction uniquement :
@@ -124,9 +194,9 @@ Merci de répondre avec UNE SEULE réaction uniquement :
 🔥 ON A BESOIN DE VOUS, LA FAMILLE !
         `);
 
-        await message.react('✅');
-        await message.react('❌');
-        await message.react('⏰');
+        await lastAnnonceMessage.react('✅');
+        await lastAnnonceMessage.react('❌');
+        await lastAnnonceMessage.react('⏰');
 
         return interaction.reply({
             content: '✅ Annonce test envoyée',
