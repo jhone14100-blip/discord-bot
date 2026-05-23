@@ -5,8 +5,7 @@ const {
     GatewayIntentBits,
     SlashCommandBuilder,
     REST,
-    Routes,
-    PermissionsBitField
+    Routes
 } = require('discord.js');
 
 const cron = require('node-cron');
@@ -37,7 +36,11 @@ const commands = [
 
     new SlashCommandBuilder()
         .setName('show')
-        .setDescription('Afficher le salon')
+        .setDescription('Afficher le salon'),
+
+    new SlashCommandBuilder()
+        .setName('testannonce')
+        .setDescription('Envoyer une annonce test')
 
 ].map(command => command.toJSON());
 
@@ -77,7 +80,7 @@ client.once('ready', () => {
         if (!channel) return;
 
         const message = await channel.send(`
-🚨 **ANNONCE IMPORTANTE - TOUS LES GITANS** 🚨
+🚨 **ANNONCE IMPORTANTE - TOUS LA FAMILLE** 🚨
 
 Merci de répondre avec UNE SEULE réaction uniquement :
 
@@ -87,7 +90,7 @@ Merci de répondre avec UNE SEULE réaction uniquement :
 
 ⚠️ Aucune autre réaction ne sera prise en compte.
 
-🔥 ON A BESOIN DE VOUS, LES GITANS !
+🔥 ON A BESOIN DE VOUS, LA FAMILLE !
         `);
 
         await message.react('✅');
@@ -103,6 +106,34 @@ client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     const channel = interaction.channel;
+
+    // TEST ANNONCE
+    if (interaction.commandName === 'testannonce') {
+
+        const message = await channel.send(`
+🚨 **ANNONCE IMPORTANTE - TOUS LA FAMILLE** 🚨
+
+Merci de répondre avec UNE SEULE réaction uniquement :
+
+✅ Présent
+❌ Pas disponible
+⏰ En retard
+
+⚠️ Aucune autre réaction ne sera prise en compte.
+
+🔥 ON A BESOIN DE VOUS, LA FAMILLE !
+        `);
+
+        await message.react('✅');
+        await message.react('❌');
+        await message.react('⏰');
+
+        return interaction.reply({
+            content: '✅ Annonce test envoyée',
+            ephemeral: true
+        });
+
+    }
 
     // SETCHANNEL
     if (interaction.commandName === 'setchannel') {
