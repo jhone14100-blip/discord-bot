@@ -79,15 +79,28 @@ client.once('ready', () => {
     console.log(`${client.user.tag} connecté`);
 
     // ANNONCE À 13H
-    cron.schedule('0 13 * * *', async () => {
+    cron.schedule('*/1 * * * *', async () => {
 
-        if (!channelId) return;
+    console.log('🚀 CRON ANNONCE LANCÉ');
+    console.log('Salon ID :', channelId);
 
-        const channel = await client.channels.fetch(channelId);
+    if (!channelId) {
 
-        if (!channel) return;
+        console.log('❌ Aucun salon configuré');
+        return;
 
-        lastAnnonceMessage = await channel.send(`
+    }
+
+    const channel = await client.channels.fetch(channelId);
+
+    if (!channel) {
+
+        console.log('❌ Salon introuvable');
+        return;
+
+    }
+
+    lastAnnonceMessage = await channel.send(`
 🚨 **ANNONCE IMPORTANTE - TOUS LA FAMILLE** 🚨
 
 Merci de répondre avec UNE SEULE réaction uniquement :
@@ -99,16 +112,18 @@ Merci de répondre avec UNE SEULE réaction uniquement :
 ⚠️ Aucune autre réaction ne sera prise en compte.
 
 🔥 ON A BESOIN DE VOUS, LA FAMILLE !
-        `);
+    `);
 
-        await lastAnnonceMessage.react('✅');
-        await lastAnnonceMessage.react('❌');
-        await lastAnnonceMessage.react('⏰');
+    console.log('✅ Annonce envoyée');
 
-    });
+    await lastAnnonceMessage.react('✅');
+    await lastAnnonceMessage.react('❌');
+    await lastAnnonceMessage.react('⏰');
+
+});
 
     // DM AUTOMATIQUE À 20H
-    cron.schedule('0 20 * * *', async () => {
+    cron.schedule('0 18 * * *', async () => {
 
         if (!lastAnnonceMessage) return;
 
